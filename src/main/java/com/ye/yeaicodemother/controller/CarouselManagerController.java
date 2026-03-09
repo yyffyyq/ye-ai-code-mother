@@ -2,8 +2,10 @@ package com.ye.yeaicodemother.controller;
 
 import com.mybatisflex.core.paginate.Page;
 import com.ye.yeaicodemother.common.BaseResponse;
+import com.ye.yeaicodemother.common.ResultUtils;
 import com.ye.yeaicodemother.exception.ErrorCode;
 import com.ye.yeaicodemother.exception.ThrowUtils;
+import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,8 @@ import com.ye.yeaicodemother.model.entity.CarouselManager;
 import com.ye.yeaicodemother.service.CarouselManagerService;
 import org.springframework.web.multipart.MultipartFile;
 
+
+import java.io.File;
 import java.util.List;
 
 /**
@@ -25,32 +29,30 @@ public class CarouselManagerController {
     @Autowired
     private CarouselManagerService carouselManagerService;
 
-
     /**
      * 上传轮播图。
      * @param file 轮播图名称
-     * @param request 轮播图状态设置请求
+     * @param request
      * @return
      */
     @PostMapping("/upload")
-    public BaseResponse<String> upload(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
+    public BaseResponse<String> upload(@RequestParam("file") MultipartFile file,
+                                       HttpServletRequest request) {
         // 1. 简单的文件参数非空校验
         ThrowUtils.throwIf(file == null, ErrorCode.PARAMS_ERROR);
-//        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         //2.判断结束对Service类进行数据库操作
-        carouselManagerService.upload(file,request);
-        return null;
+        File imageUrl = carouselManagerService.upload(file,request);
+        return ResultUtils.success(imageUrl.getAbsolutePath());
     }
+    @PostMapping("saveCarousel")
+    public BaseResponse<String> saveCarousel(@RequestBody CarouselManagerDto carouselManagerDto,HttpServletRequest request) {
+        //1.先判断请求是否为空
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        //2.调用Service服务
+        carouselManagerService.save_myself(carouselManagerDto);
 
-    /**
-     * 保存。
-     *
-     * @param carouselManager 
-     * @return {@code true} 保存成功，{@code false} 保存失败
-     */
-    @PostMapping("save")
-    public boolean save(@RequestBody CarouselManager carouselManager) {
-        return carouselManagerService.save(carouselManager);
+        //3.返回成功值
+        return null;
     }
 
     /**

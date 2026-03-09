@@ -1,9 +1,12 @@
 package com.ye.yeaicodemother.service.impl;
 
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.ye.yeaicodemother.exception.BusinessException;
 import com.ye.yeaicodemother.exception.ErrorCode;
+import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.entity.CarouselManager;
 import com.ye.yeaicodemother.mapper.CarouselManagerMapper;
 import com.ye.yeaicodemother.service.CarouselManagerService;
@@ -30,7 +33,7 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
     private String domain;
 
     @Override
-    public void upload(MultipartFile file, HttpServletRequest request) {
+    public File upload(MultipartFile file, HttpServletRequest request) {
         //1.拿到上传文件的名字，并提取其后缀
         String originalFilename = file.getOriginalFilename();
         String suffix = "";
@@ -52,11 +55,32 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
         }catch (Exception e){
             throw new BusinessException(ErrorCode.CAROUSESLMANAGER_ERROR);
         }
-        System.out.println("✅ 图片上传成功！已保存到物理路径: " + destFile.getAbsolutePath());
-        //5.将轮播图的存储路径放到数据库imageUrl中方便之后去拿
+        //6.返回成功的提示,并返回存储路径用户在填写信息的时候可以看到图片
+        return destFile;
+    }
 
-        //6.将request的请求也放到数据库中
+    @Override
+    public void save_myself(CarouselManagerDto carouselManagerDto) {
+        //获取轮播图的参数
+        String imageUrl = carouselManagerDto.getImageUrl();
+        Integer locationType = carouselManagerDto.getLocationType();
+        Integer sortOrder = carouselManagerDto.getSortOrder();
+        //校验参数是否为空
+        if(StrUtil.hasBlank(imageUrl)||locationType==null||sortOrder==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数为空");
+        }
+        //查询设置的locationType和sortOrder是否与其他的有冲突，
+        //注意：这个需要locationType和sortOrder合在一起查询
+        // 使用 Lambda 表达式防误写字段名，组合查询条件
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .where(CarouselManager::getLocationType).eq(locationType)
+                .and(CarouselManager::getSortOrder).eq(sortOrder);
+        //调用 IService 提供的 count 方法统计符合条件的记录数
+        long count = this.count(queryWrapper);
 
-        //6.返回成功的提示
+        //判断冲突
+        if (count > 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该位置的排序序号已被占用，请更换排序或位置");
+        }
     }
 }
