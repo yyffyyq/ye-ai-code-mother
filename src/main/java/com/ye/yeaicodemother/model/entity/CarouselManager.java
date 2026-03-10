@@ -1,5 +1,6 @@
 package com.ye.yeaicodemother.model.entity;
 
+import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
@@ -57,6 +58,7 @@ public class CarouselManager implements Serializable {
     /**
      * 上传时间 (系统自动生成)
      */
+    @Column(onInsertValue = "now()")
     private LocalDateTime createTime;
 
     /**

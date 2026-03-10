@@ -3,10 +3,12 @@ package com.ye.yeaicodemother.service;
 import com.mybatisflex.core.service.IService;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.entity.CarouselManager;
+import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.List;
 
 /**
  *  服务层。
@@ -20,7 +22,7 @@ public interface CarouselManagerService extends IService<CarouselManager> {
      * @param file 轮播图名称
      * @param request
      */
-    File upload(MultipartFile file, HttpServletRequest request);
+    String upload(MultipartFile file, HttpServletRequest request);
 
 
 
@@ -30,4 +32,11 @@ public interface CarouselManagerService extends IService<CarouselManager> {
      * @return
      */
     long save_myself(CarouselManagerDto carouselManagerDto);
+
+    /**
+     * 获取轮播图信息通过轮播图位置id
+     * @param locationType
+     * @return
+     */
+    List<CarouselManagerVO> selectByLocationType(Integer locationType);
 }

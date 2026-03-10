@@ -9,8 +9,10 @@ import com.ye.yeaicodemother.exception.ErrorCode;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.entity.CarouselManager;
 import com.ye.yeaicodemother.mapper.CarouselManagerMapper;
+import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
 import com.ye.yeaicodemother.service.CarouselManagerService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,15 +29,24 @@ import java.util.List;
  */
 @Service
 public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMapper, CarouselManager>  implements CarouselManagerService{
+
     // 从配置文件读取目录
     @Value("${file.upload-dir}")
     private String uploadDir;
     // 从配置文件读取域名
     @Value("${file.domain}")
     private String domain;
+    @Autowired
+    private CarouselManagerMapper carouselManagerMapper;
 
+    /**
+     * 图片上传功能
+     * @param file 轮播图名称
+     * @param request
+     * @return
+     */
     @Override
-    public File upload(MultipartFile file, HttpServletRequest request) {
+    public String upload(MultipartFile file, HttpServletRequest request) {
         //1.拿到上传文件的名字，并提取其后缀
         String originalFilename = file.getOriginalFilename();
         String suffix = "";
@@ -50,8 +61,6 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
             // 后缀不在允许的列表中，直接抛出异常拦截
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "只允许上传图片格式的文件");
         }
-
-
         //2.加上uuid避免重复然后
         String newFileName = UUID.randomUUID().toString().replace("-", "") + suffix;
         //3.下载到指定的文件夹里
@@ -61,14 +70,14 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
         }
         //4. 构建最终的绝对文件路径
         File destFile = new File(folder, newFileName);
-        //将上传的临时文件放到指定文件夹中
+        // 5.将上传的临时文件放到指定文件夹中
         try{
             file.transferTo(destFile);
         }catch (Exception e){
             throw new BusinessException(ErrorCode.CAROUSESLMANAGER_ERROR);
         }
         //6.返回成功的提示,并返回存储路径用户在填写信息的时候可以看到图片
-        return destFile;
+        return "/images/" + newFileName;
     }
 
     @Override
@@ -103,5 +112,21 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
             throw new BusinessException(ErrorCode.OPERATION_ERROR,"保存失败，数据库错误");
         }
         return carouselManager.getId();
+    }
+
+    /**
+     * 获取轮播图通过位置信息
+     * @param locationType 轮播图位置id
+     * @return
+     */
+    @Override
+    public List<CarouselManagerVO> selectByLocationType(Integer locationType) {
+        //构建查询语句 where location_type = ?
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .where(CarouselManager::getLocationType).eq(locationType)
+                .orderBy(CarouselManager::getSortOrder).asc();;
+        //查询并返回
+        /// 直接就把获取到的值赋值给封装方法
+        return carouselManagerMapper.selectListByQueryAs(queryWrapper,CarouselManagerVO.class);
     }
 }
