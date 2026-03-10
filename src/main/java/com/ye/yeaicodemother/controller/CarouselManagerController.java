@@ -45,14 +45,14 @@ public class CarouselManagerController {
         return ResultUtils.success(imageUrl.getAbsolutePath());
     }
     @PostMapping("saveCarousel")
-    public BaseResponse<String> saveCarousel(@RequestBody CarouselManagerDto carouselManagerDto,HttpServletRequest request) {
+    public BaseResponse<Long> saveCarousel(@RequestBody CarouselManagerDto carouselManagerDto,HttpServletRequest request) {
         //1.先判断请求是否为空
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         //2.调用Service服务
-        carouselManagerService.save_myself(carouselManagerDto);
+        long Result = carouselManagerService.save_myself(carouselManagerDto);
 
         //3.返回成功值
-        return null;
+        return ResultUtils.success(Result);
     }
 
     /**

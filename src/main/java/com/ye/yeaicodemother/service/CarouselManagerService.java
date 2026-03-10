@@ -29,5 +29,5 @@ public interface CarouselManagerService extends IService<CarouselManager> {
      * @param carouselManagerDto 轮播图信息
      * @return
      */
-    void save_myself(CarouselManagerDto carouselManagerDto);
+    long save_myself(CarouselManagerDto carouselManagerDto);
 }

@@ -60,7 +60,7 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
     }
 
     @Override
-    public void save_myself(CarouselManagerDto carouselManagerDto) {
+    public long save_myself(CarouselManagerDto carouselManagerDto) {
         //获取轮播图的参数
         String imageUrl = carouselManagerDto.getImageUrl();
         Integer locationType = carouselManagerDto.getLocationType();
@@ -77,10 +77,19 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
                 .and(CarouselManager::getSortOrder).eq(sortOrder);
         //调用 IService 提供的 count 方法统计符合条件的记录数
         long count = this.count(queryWrapper);
-
         //判断冲突
         if (count > 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "该位置的排序序号已被占用，请更换排序或位置");
         }
+        //判断之后将数据存储到数据库中
+        CarouselManager carouselManager = new CarouselManager();
+        carouselManager.setImageUrl(imageUrl);
+        carouselManager.setLocationType(locationType);
+        carouselManager.setSortOrder(sortOrder);
+        boolean saveResult = this.save(carouselManager);
+        if(!saveResult){
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"保存失败，数据库错误");
+        }
+        return carouselManager.getId();
     }
 }
