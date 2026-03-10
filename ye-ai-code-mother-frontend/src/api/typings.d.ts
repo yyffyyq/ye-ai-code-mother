@@ -47,8 +47,30 @@ declare namespace API {
     message?: string
   }
 
+  type CarouselManager = {
+    id?: number
+    imageUrl?: string
+    locationType?: number
+    sortOrder?: number
+    auditStatus?: number
+    createTime?: string
+    updateTime?: string
+    isDeleted?: number
+  }
+
+  type CarouselManagerDto = {
+    id?: number
+    imageUrl?: string
+    locationType?: number
+    sortOrder?: number
+  }
+
   type DeleteRequest = {
     id?: number
+  }
+
+  type getInfoParams = {
+    id: number
   }
 
   type getUserByIdParams = {
@@ -70,6 +92,19 @@ declare namespace API {
     updateTime?: string
   }
 
+  type PageCarouselManager = {
+    records?: CarouselManager[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
+  }
+
+  type pageParams = {
+    page: PageCarouselManager
+  }
+
   type PageUserVO = {
     records?: UserVO[]
     pageNumber?: number
@@ -77,6 +112,10 @@ declare namespace API {
     totalPage?: number
     totalRow?: number
     optimizeCountQuery?: boolean
+  }
+
+  type removeParams = {
+    id: number
   }
 
   type User = {

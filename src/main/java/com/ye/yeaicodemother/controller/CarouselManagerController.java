@@ -109,4 +109,6 @@ public class CarouselManagerController {
         return carouselManagerService.page(page);
     }
 
+    //TODO 这里我需要再做一个查询locationType的判断，在轮播图中设置
+
 }
