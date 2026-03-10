@@ -5,7 +5,7 @@
       <a-col flex="200px">
         <RouterLink to="/">
           <div class="header-left">
-            <img class="logo" src="@/assets/log.png" alt="Logo" />
+            <img class="logo" src="../assets/logo.png" alt="Logo" />
           </div>
         </RouterLink>
       </a-col>
@@ -116,7 +116,7 @@ const originItems = [
 const filterMenus = (menus = [] as MenuProps['items']) => {
   return menus?.filter((menu) => {
     const menuKey = menu?.key as string
-    
+
     // 权限校验1：管理员权限页面
     if (menuKey?.startsWith('/admin')) {
       const loginUser = loginUserStore.loginUser
@@ -124,7 +124,7 @@ const filterMenus = (menus = [] as MenuProps['items']) => {
         return false
       }
     }
-    
+
     // 权限校验2：登录用户才可见的页面
     if (menuKey?.startsWith('/caroulmanges')) {
       const loginUser = loginUserStore.loginUser
@@ -132,7 +132,7 @@ const filterMenus = (menus = [] as MenuProps['items']) => {
         return false
       }
     }
-    
+
     return true
   })
 }
@@ -155,7 +155,7 @@ const handleMenuClick: MenuProps['onClick'] = (e) => {
 <style scoped>
 .header {
   /* 使用一个清爽的淡蓝色作为背景 */
-  background: #f0f8ff; 
+  background: #2e6da5;
   padding: 4px 24px;
 }
 
