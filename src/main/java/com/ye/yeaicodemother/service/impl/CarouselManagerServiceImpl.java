@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -40,6 +42,16 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
         if (originalFilename != null && originalFilename.contains(".")) {
             suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
+        ///==============================做一个文件上传判断,限制只能上传图片格式文件====================================
+        /// 做一个列表放入图片格式类型后缀
+        List<String> validImageSuffixes = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp");
+        /// 对上传图片后缀提取并判断
+        if (!validImageSuffixes.contains(suffix)) {
+            // 后缀不在允许的列表中，直接抛出异常拦截
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "只允许上传图片格式的文件");
+        }
+
+
         //2.加上uuid避免重复然后
         String newFileName = UUID.randomUUID().toString().replace("-", "") + suffix;
         //3.下载到指定的文件夹里
