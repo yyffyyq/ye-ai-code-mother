@@ -2,7 +2,24 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 轮播图按Id查询功能部分 GET /carouselManager/getInfo/${param0} */
+/** 根据位置获取轮播图列表 传入位置类型的ID（例如：1-首页，2-副页），返回该位置下的所有轮播图数据 GET /carouselManager/getCarouselBylocationType/${param0} */
+export async function getCarouselBylocationType(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getCarouselBylocationTypeParams,
+  options?: { [key: string]: any }
+) {
+  const { location_type: param0, ...queryParams } = params
+  return request<API.BaseResponseListCarouselManagerVO>(
+    `/carouselManager/getCarouselBylocationType/${param0}`,
+    {
+      method: 'GET',
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  )
+}
+
+/** 根据主键查询 用于根据图片id查询对应轮播图图片 GET /carouselManager/getInfo/${param0} */
 export async function getInfo(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getInfoParams,
@@ -16,15 +33,7 @@ export async function getInfo(
   })
 }
 
-/** 轮播图查询列表功能部分 GET /carouselManager/list */
-export async function list(options?: { [key: string]: any }) {
-  return request<API.CarouselManager[]>('/carouselManager/list', {
-    method: 'GET',
-    ...(options || {}),
-  })
-}
-
-/** 轮播图按页查询部分 GET /carouselManager/page */
+/** 分页查询 GET /carouselManager/page */
 export async function page(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.pageParams,
@@ -41,7 +50,7 @@ export async function page(
   })
 }
 
-/** 轮播图信息删除按轮播图id功能部分 DELETE /carouselManager/remove/${param0} */
+/** 根据主键删除 用于根据图片id删除轮播图图片 DELETE /carouselManager/remove/${param0} */
 export async function remove(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.removeParams,
@@ -55,7 +64,7 @@ export async function remove(
   })
 }
 
-/** 轮播图信息保存到数据库功能部分 POST /carouselManager/saveCarousel */
+/** 保存信息如数据库 将提交的数据表单保存到数据库中 POST /carouselManager/saveCarousel */
 export async function saveCarousel(body: API.CarouselManagerDto, options?: { [key: string]: any }) {
   return request<API.BaseResponseLong>('/carouselManager/saveCarousel', {
     method: 'POST',
@@ -67,7 +76,7 @@ export async function saveCarousel(body: API.CarouselManagerDto, options?: { [ke
   })
 }
 
-/** 轮播图信息更新功能部分 PUT /carouselManager/update */
+/** 根据主键更新 用于根据图片id修改轮播图图片 PUT /carouselManager/update */
 export async function update(body: API.CarouselManager, options?: { [key: string]: any }) {
   return request<boolean>('/carouselManager/update', {
     method: 'PUT',
@@ -79,7 +88,7 @@ export async function update(body: API.CarouselManager, options?: { [key: string
   })
 }
 
-/** 图片上传功能部分 POST /carouselManager/upload */
+/** 上传轮播图 用于上传图片的接口，返回值为图片存储位置 POST /carouselManager/upload */
 export async function upload(body: {}, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/carouselManager/upload', {
     method: 'POST',
