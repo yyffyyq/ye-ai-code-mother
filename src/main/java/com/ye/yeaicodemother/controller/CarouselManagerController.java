@@ -8,6 +8,7 @@ import com.ye.yeaicodemother.exception.ErrorCode;
 import com.ye.yeaicodemother.exception.ThrowUtils;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
+import com.ye.yeaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -85,21 +86,33 @@ public class CarouselManagerController {
      */
     @DeleteMapping("remove/{id}")
     @Operation(summary = "根据主键删除", description = "用于根据图片id删除轮播图图片")
-    public boolean remove(@PathVariable Long id) {
-        return carouselManagerService.removeById(id);
+    public BaseResponse<String> remove(@PathVariable Long id) {
+        //还是先判断是否为空值
+        ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR);
+        //调用服务去逻辑删除，并清空sortorder
+        String Reulst = carouselManagerService.RemoveById(id);
+        //返回前端值
+        return ResultUtils.success(Reulst);
     }
 
     /**
      * 根据主键更新。
      *
-     * @param carouselManager 
+     * @param carouselManagerDto
      * @return {@code true} 更新成功，{@code false} 更新失败
      */
     @PutMapping("update")
     @Operation(summary = "根据主键更新", description = "用于根据图片id修改轮播图图片")
-    public boolean update(@RequestBody CarouselManager carouselManager) {
-        return carouselManagerService.updateById(carouselManager);
+    public BaseResponse<CarouselManagerVO> update(@RequestBody CarouselManagerDto carouselManagerDto,HttpServletRequest request) {
+        //判断是否为空
+        ThrowUtils.throwIf(carouselManagerDto == null, ErrorCode.PARAMS_ERROR);
+        //去实现类
+        CarouselManagerVO carouselManagerVO = carouselManagerService.updateCoarouselInfo(carouselManagerDto);
+        //返回值
+        return ResultUtils.success(carouselManagerVO);
     }
+
+
     /**
      * 根据主键获取。
      *
@@ -112,15 +125,34 @@ public class CarouselManagerController {
         return carouselManagerService.getById(id);
     }
 
+
     /**
      * 分页查询。
-     *
-     * @param page 分页对象
-     * @return 分页对象
+     * @param carouselManagerDto 请求参数
+     * @return 分页返回对象
      */
-    @GetMapping("page")
-    @Operation(summary = "分页查询", description = "   ")
-    public Page<CarouselManager> page(Page<CarouselManager> page) {
-        return carouselManagerService.page(page);
+    @PostMapping("/list/page/vo")
+    @Operation(summary = "分页查询", description = "查几个几页怎么查根据发送的请求决定")
+    public BaseResponse<Page<CarouselManagerVO>> ListCarouselManagerPageVo(@RequestBody CarouselManagerDto carouselManagerDto) {
+        //先判断有是否为空请求
+        ThrowUtils.throwIf(carouselManagerDto == null, ErrorCode.PARAMS_ERROR);
+        //赋值pageNum和pageSize
+        //这里是集成了/common/PageRequest.java
+        /// 设置页号和每页数量
+        long pageNum = carouselManagerDto.getPageNum();
+        long pageSize = carouselManagerDto.getPageSize();
+        /// 将第几页每页多少发出
+        Page<CarouselManager> carouselManagerPage = carouselManagerService.page(Page.of(pageNum, pageSize),
+                /// 查询请求
+                carouselManagerService.getQueryWrapper(carouselManagerDto));
+
+        //封装脱敏
+        /// 固定写法
+        Page<CarouselManagerVO> carouselManagerVOPage = new Page<>(pageNum, pageSize, carouselManagerPage.getTotalRow());
+        /// 封装返回值
+        List<CarouselManagerVO> carouselManagerVOList = carouselManagerService.getCarouselVoList(carouselManagerPage.getRecords());
+        carouselManagerVOPage.setRecords(carouselManagerVOList);
+        //返回数据
+        return ResultUtils.success(carouselManagerVOPage);
     }
 }

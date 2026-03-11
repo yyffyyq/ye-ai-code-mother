@@ -48,7 +48,8 @@ public class CarouselManager implements Serializable {
     /**
      * 播放排序 (数字越小越靠前，控制轮播顺序)
      */
-    private Integer sortOrder;
+    @Column("sort_order")
+    private Integer displayOrder;
 
     /**
      * 审核状态: 0-待审核, 1-已通过, 2-已驳回

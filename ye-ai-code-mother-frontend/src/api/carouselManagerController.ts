@@ -33,19 +33,17 @@ export async function getInfo(
   })
 }
 
-/** 分页查询 GET /carouselManager/page */
-export async function page(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.pageParams,
+/** 分页查询 查几个几页怎么查根据发送的请求决定 POST /carouselManager/list/page/vo */
+export async function listCarouselManagerPageVo(
+  body: API.CarouselManagerDto,
   options?: { [key: string]: any }
 ) {
-  return request<API.PageCarouselManager>('/carouselManager/page', {
-    method: 'GET',
-    params: {
-      ...params,
-      page: undefined,
-      ...params['page'],
+  return request<API.BaseResponsePageCarouselManagerVO>('/carouselManager/list/page/vo', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
+    data: body,
     ...(options || {}),
   })
 }
@@ -57,7 +55,7 @@ export async function remove(
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params
-  return request<boolean>(`/carouselManager/remove/${param0}`, {
+  return request<API.BaseResponseString>(`/carouselManager/remove/${param0}`, {
     method: 'DELETE',
     params: { ...queryParams },
     ...(options || {}),
@@ -77,8 +75,8 @@ export async function saveCarousel(body: API.CarouselManagerDto, options?: { [ke
 }
 
 /** 根据主键更新 用于根据图片id修改轮播图图片 PUT /carouselManager/update */
-export async function update(body: API.CarouselManager, options?: { [key: string]: any }) {
-  return request<boolean>('/carouselManager/update', {
+export async function update(body: API.CarouselManagerDto, options?: { [key: string]: any }) {
+  return request<API.BaseResponseCarouselManagerVO>('/carouselManager/update', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

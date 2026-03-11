@@ -1,5 +1,6 @@
 package com.ye.yeaicodemother.service;
 
+import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.entity.CarouselManager;
@@ -16,6 +17,7 @@ import java.util.List;
  * @author <a href="https://github.com/yyffyyq">代码制造者yfy</a>
  */
 public interface CarouselManagerService extends IService<CarouselManager> {
+
 
     /**
      * 轮播图上传抽象方法
@@ -39,4 +41,41 @@ public interface CarouselManagerService extends IService<CarouselManager> {
      * @return
      */
     List<CarouselManagerVO> selectByLocationType(Integer locationType);
+
+
+    /**
+     * 分页查询所有数据
+     * @param carouselManagerDto 请求体
+     * @return 返回值CarouselManage类型
+     */
+    QueryWrapper getQueryWrapper(CarouselManagerDto carouselManagerDto);
+
+    /**
+     * 对返回前端的值进行封装
+     * @param records 需要封装值
+     * @return 返回值类型为List<CarouselManagerVO>列表</>
+     */
+    List<CarouselManagerVO> getCarouselVoList(List<CarouselManager> records);
+
+    /**
+     * 一个一个封装的方法
+     * @param carouselManager
+     * @return
+     */
+    CarouselManagerVO getCarouselVo(CarouselManager carouselManager);
+
+    /**
+     * 根据轮播图id修改
+     * @param carouselManagerDto
+     * @return
+     */
+    CarouselManagerVO updateCoarouselInfo(CarouselManagerDto carouselManagerDto);
+
+    /**
+     * 根据用户id进行逻辑删除
+     * 清空sortorder避免影响需要上传的图片
+     * @param id 需要删除的图片id
+     * @return
+     */
+    String RemoveById(Long id);
 }

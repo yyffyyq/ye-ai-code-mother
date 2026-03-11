@@ -1,6 +1,11 @@
 package com.ye.yeaicodemother.model.dto.carouselManager;
 
+import com.mybatisflex.annotation.Column;
+import com.ye.yeaicodemother.common.PageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
 
 /**
  * 轮播图新增/修改 传输对象 (前端 -> 后端)
@@ -13,8 +18,9 @@ import lombok.Data;
  * locationType 轮播图位置例如(首页、副页)
  * sortOrder 轮播图轮播前后，字数越小越靠前
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class CarouselManagerDto {
+public class CarouselManagerDto extends PageRequest implements Serializable {
 
     /**
      * 轮播图编号 (新增时为空，修改时必填)
@@ -34,7 +40,8 @@ public class CarouselManagerDto {
     /**
      * 播放排序 (可选，不传默认排在最后)
      */
-    private Integer sortOrder;
+    @Column("sort_order")
+    private Integer displayOrder;
 
     // 注意：审核状态、删除状态、时间等字段通常不由前端提交，而是后端业务逻辑控制，所以不放在 DTO 中。
 }
