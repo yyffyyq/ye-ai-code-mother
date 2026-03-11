@@ -25,9 +25,9 @@ export async function list(options?: { [key: string]: any }) {
 }
 
 /** 此处后端没有提供注释 GET /carouselLocation/page */
-export async function page1(
+export async function page(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.page1Params,
+  params: API.pageParams,
   options?: { [key: string]: any }
 ) {
   return request<API.PageCarouselLocation>('/carouselLocation/page', {

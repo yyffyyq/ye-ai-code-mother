@@ -33,10 +33,8 @@
     <!-- 主体内容：列表展示 -->
     <template #content>
       <div class="list-card">
-
-        <!--主体内容展示部分（轮播图网格）-->
         <div class="card-content">
-          <div v-if="carouselList.length === 0" class="list-placeholder">
+          <div v-if="carouselList.length === 0 && !loading" class="list-placeholder">
             <a-empty description="该位置暂无轮播图资料" />
           </div>
 
@@ -44,42 +42,41 @@
             v-else
             :grid="{ gutter: 24, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 4 }"
             :data-source="carouselList"
+            :loading="loading"
+            :pagination="pagination"
           >
             <template #renderItem="{ item, index }">
               <a-list-item>
                 <a-card hoverable class="carousel-card">
-                  <!--卡片封面：图片 + 状态标签-->
                   <template #cover>
                     <div class="card-cover-wrapper">
-                      <img
-                        :src="getImageUrl(item.imageUrl)"
-                        alt="轮播图"
-                        class="card-image"
-                      />
-                      <div class="status-badge" :class="item.isDeleted === 0 ? 'status-active' : 'status-deleted'">
+                      <img :src="getImageUrl(item.imageUrl)" alt="轮播图" class="card-image" />
+                      <div
+                        class="status-badge"
+                        :class="item.isDeleted === 0 ? 'status-active' : 'status-deleted'"
+                      >
                         {{ item.isDeleted === 0 ? '正常展示' : '已下线' }}
                       </div>
                     </div>
                   </template>
 
-                  <!--卡片内容-->
                   <a-card-meta>
-                    <template #title>
-                      <span class="card-title-text">轮播图编号: {{ index + 1 }}</span>
-                    </template>
                     <template #description>
                       <div class="card-info">
-                        <p><span class="info-label">排序权重:</span> {{ item.sortOrder }}</p>
-                        <p><span class="info-label">创建时间:</span> 2026-03-09 10:00:00</p>
+                        <p><span class="info-label">创建时间:</span> {{ formatTime(item.createTime) }}</p>
+                      </div>
+                      <div class="card-info">
+                        <p><span class="info-label">最近更新:</span> {{ formatTime(item.updateTime) || '-' }}</p>
                       </div>
                     </template>
                   </a-card-meta>
 
-                  <!--卡片底部操作按钮-->
                   <template #actions>
-                    <div class="action-item"><swap-outlined /> {{ item.sortOrder }}</div>
+                    <div class="action-item">
+                      <swap-outlined /> {{ item.sortOrder || item.displayOrder }}
+                    </div>
                     <edit-outlined key="edit" @click="showModalForEdit(item)" />
-                    <delete-outlined key="delete" />
+                    <delete-outlined key="delete" @click="deleteCarousel(item)" />
                   </template>
                 </a-card>
               </a-list-item>
@@ -117,7 +114,7 @@
             <img
               :src="getUrl(formState.imageUrl)"
               alt="轮播图"
-              style="width: 100%; max-height: 200px; object-fit: contain;"
+              style="width: 100%; max-height: 200px; object-fit: contain"
             />
           </template>
           <p class="ant-upload-drag-icon">
@@ -128,31 +125,47 @@
         </a-upload-dragger>
       </a-form-item>
       <a-form-item label="显示位置">
-        <a-tag color="blue" style="font-size: 14px; padding: 4px 10px;">
+        <a-tag color="blue" style="font-size: 14px; padding: 4px 10px">
           {{ currentLocationName }}
         </a-tag>
       </a-form-item>
       <a-form-item label="排序权重">
-        <a-input-number v-model:value="formState.sortOrder" :min="0" placeholder="数值越大越靠前" style="width: 100%" />
+        <a-input-number
+          v-model:value="formState.displayOrder"
+          :min="0"
+          placeholder="数值越大越靠前"
+          style="width: 100%"
+        />
       </a-form-item>
     </a-form>
   </a-modal>
-
-
-
-
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { PlusOutlined, InboxOutlined, PictureOutlined, EditOutlined, DeleteOutlined, SwapOutlined } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
-import { upload, saveCarousel,getCarouselBylocationType} from '@/api/carouselManagerController.ts'
-import { list} from '@/api/carouselLocationController.ts'
+import { computed, createVNode, onMounted, reactive, ref } from 'vue'
+import {
+  PlusOutlined,
+  InboxOutlined,
+  PictureOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SwapOutlined, ExclamationCircleOutlined
+} from '@ant-design/icons-vue'
+import { message, Modal } from 'ant-design-vue'
+import {
+  upload,
+  saveCarousel,
+  update,
+  listCarouselManagerPageVo, remove
+} from '@/api/carouselManagerController.ts'
+import { list } from '@/api/carouselLocationController.ts'
 import CarouselManagementLayout from './layout/CarouselManagementLayout.vue'
-import * as path from 'node:path'
-
-
+import dayjs from 'dayjs'
+// =============================================格式化时间函数=======
+const formatTime = (time: string | null) => {
+  if (!time) return ''
+  return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
+}
 
 // =============================== 导航栏 (位置分类) 相关逻辑 =================
 // =============================== 获取轮播图信息通过locationTypeid===========
@@ -162,6 +175,20 @@ const carouselList = ref<any[]>([])
 const loading = ref<boolean>(false)
 //==========制作一个变量用于存放点击之后变值，方便之后在点击添加轮播图的时候不需要再选择1、2、3
 const locationTypeForcarouselSaveKey = ref<string>('')
+// 分页配置对象
+const pagination = reactive({
+  current: 1, // 当前页数
+  pageSize: 8, // 每页条数 (建议设为 4 的倍数，比如 8，因为你的网格是 4 列)
+  total: 0, // 数据总数
+  showSizeChanger: true, // 是否允许改变每页条数
+  // 当页码或 pageSize 改变时触发
+  onChange: (page: number, pageSize: number) => {
+    pagination.current = page
+    pagination.pageSize = pageSize
+    // 页码改变后，重新拉取当前位置的数据
+    fetchCarouselData(locationTypeForcarouselSaveKey.value)
+  },
+})
 // 监听用户点击导航栏切换的操作
 const handleMenuClick = (menuInfo: any) => {
   const selectedLocationId = menuInfo.key
@@ -171,75 +198,81 @@ const handleMenuClick = (menuInfo: any) => {
   if (selectedLocationId === 'config') return
   //拿到当前导航栏的值
   locationTypeForcarouselSaveKey.value = selectedLocationId
+  // 每次切换左侧位置菜单时，一定要把页码重置为第 1 页
+  pagination.current = 1
   // 在这里调用根据位置 ID 获取轮播图列表的接口
-
   fetchCarouselData(selectedLocationId)
 }
-const fetchCarouselData =async (selectLocationId: String)=>{
-  try{
+const fetchCarouselData = async (selectLocationId: String | number) => {
+  // 开启加载动画
+  loading.value = true
+  try {
     // 调用API接口获取对应位置所属的轮播图列表
-    const res = await getCarouselBylocationType({
-      location_type:Number(selectLocationId)
+    const res = await listCarouselManagerPageVo({
+      locationType: Number(selectLocationId),
+      pageNum: pagination.current,
+      pageSize: pagination.pageSize,
     })
-    if(res.data.code == 0){
-      // 赋值给轮播图列表用于展示
-      // console.log(res.data.data)
-      carouselList.value = res.data.data || []
-      // message.success("查询成功")
+    if (res.data.code == 0) {
+      // 获取分页返回的数据 (注意：MyBatis-Plus/Flex 返回的列表数据通常在 records 字段里)
+      const pageData = res.data.data
+      // 赋值给列表，如果没有数据则给空数组兜底
+      carouselList.value = pageData?.records || []
+      // 更新分页总条数 (如果后端叫 totalRow，请把这里的 total 换成 totalRow)
+      pagination.total = Number(pageData?.total || pageData?.totalRow || 0)
     }
-  }
-  catch (error){
-    console.log("查询失败"+error)
+  } catch (error) {
+    console.log('查询失败' + error)
+  } finally {
+    loading.value = false // 关闭加载动画
   }
 }
 // ===========================兼容images文件夹的图片和tmp文件夹的图片===============
-const getUrl = (path:string) =>{
+const getUrl = (path: string) => {
   // 统一后端基地址 (包含 /api)
-  const baseUrl = "http://localhost:8989/api"
-  if (!path) return '';
+  const baseUrl = 'http://localhost:8989/api'
+  if (!path) return ''
 
   // 1. 如果已经是完整的网络链接，直接用
   if (path.startsWith('http')) {
-    return path;
+    return path
   }
   // 判断图片前缀
-  if(path.startsWith("/tmp/")||path.startsWith("/images/")){
-    return `${baseUrl}${path}`;
+  if (path.startsWith('/tmp/') || path.startsWith('/images/')) {
+    return `${baseUrl}${path}`
   }
 }
 
 // ==========================只兼容转换images文件夹下的路径======================
 const getImageUrl = (path: string) => {
-  if (!path) return '';
+  if (!path) return ''
 
   // 1. 如果已经是完整的网络链接，直接用
   if (path.startsWith('http')) {
-    return path;
+    return path
   }
 
   // 统一后端基地址 (包含 /api)
-  const baseUrl = "http://localhost:8989/api"
-
+  const baseUrl = 'http://localhost:8989/api'
 
   // 3. 兼容新数据：如果是后端的相对路径 (比如 /images/xxx.png)
   if (path.startsWith('/images/')) {
-    return `${baseUrl}${path}`;
+    return `${baseUrl}${path}`
   }
 
   // 兜底返回
-  return `${baseUrl}/images/${path}`;
+  return `${baseUrl}/images/${path}`
 }
 
-
-// ===================================存放从后端获取的位置列表数据=============
+// ============================存放从后端获取的位置列表数据=====================
 const locationList = ref<any[]>([])
 // 当前选中的导航栏 key (Ant Design 的 selectedKeys 必须是数组，并且 key 通常建议转成字符串)
 const activeMenuKey = ref<string[]>([])
 
 // 1. 获取导航栏(位置)数据
-const fetchLocations = async ()=>{
+const fetchLocations = async () => {
   const res = await list()
-  if (res.data.code == 0){
+  if (res.data.code == 0) {
     //查询成功执行
     // message.success('查询成功')
     //查询成功之后对列表赋值
@@ -249,13 +282,13 @@ const fetchLocations = async ()=>{
       const firstId = String(locationList.value[0].id)
       activeMenuKey.value = [firstId]
       //在这里加一个为了在第一次点进来还未点击导航栏的时候可以有数据预加载
-      locationTypeForcarouselSaveKey.value =  Number([firstId])
+      locationTypeForcarouselSaveKey.value = Number([firstId])
       // 刚进页面不仅要选中第一个导航栏，还要把它的轮播图查出来！
       fetchCarouselData(firstId)
     }
-  }else{
+  } else {
     //查询失败执行标准
-    message.error("查询失败"+res.data.message)
+    message.error('查询失败' + res.data.message)
   }
 }
 // 页面一进入就自动执行
@@ -273,28 +306,61 @@ const fileList = ref<any[]>([])
 const formState = reactive<API.CarouselManagerDto>({
   imageUrl: '',
   locationType: 0,
-  sortOrder: 0,
+  displayOrder: 0,
 })
+// =======================轮播图删除相关逻辑=============================
+const deleteCarousel = async (item: API.CarouselManagerDto | any) => {
+  Modal.confirm({
+    title: '确认删除',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: '确定要删除这条轮播图吗？此操作不可恢复。',
+    okText: '确认删除',
+    okType: 'danger', // 按钮会变成红色警告样式
+    cancelText: '取消',
+    // 点击确认后的异步操作写在这里
+    async onOk() {
+      try {
+        // 进行 api 接口调用
+        const res = await remove({ id: item.id });
+        if (res.data.code === 0) {
+          message.success("删除成功");
+          //更新
+          fetchLocations()
 
-// ================= 轮播图编辑相关逻辑 ============================
+        } else {
+          message.error("删除失败：" + (res.data.message || '未知错误'));
+        }
+      } catch (error) {
+        message.error("网络请求出错，删除失败");
+        console.error(error);
+      }
+    },
+    // 点击取消的回调（通常不需要写逻辑，弹窗会自动关掉）
+    onCancel() {
+      console.log('用户取消了删除操作');
+    },
+  });
+}
+
+// ======================= 轮播图编辑相关逻辑 ============================
 // 编辑轮播图显示弹窗方法
-const showModalForEdit = (item:API.CarouselManagerDto | any) =>{
+const showModalForEdit = (item: API.CarouselManagerDto | any) => {
   //在点击轮播图编辑时赋值该值给表单数据
-  Object.assign(formState, item);
+  Object.assign(formState, item)
   //清除上传组件的UI列表
   fileList.value = []
   //这里的展示弹窗可能需要修改，因为我所需要的弹窗是需要图片的回显，然后可以修改上传图片
   //显示弹窗
   visible.value = true
 }
-
-
 // ================= 轮播图添加相关逻辑 =================
 
 // 新增显示弹窗方法
 const showModal = () => {
-  resetForm()          // 打开前先清空旧的业务数据
-  fileList.value = []  // 打开前清空上传组件的 UI 列表
+  //清空
+  Object.assign(formState, null)
+  resetForm() // 打开前先清空旧的业务数据
+  fileList.value = [] // 打开前清空上传组件的 UI 列表
   visible.value = true
 }
 
@@ -332,6 +398,7 @@ const handleUpload = async (options: any) => {
 }
 
 // ==================================提交表单================================
+// ===================这里还需要做一个是添加还是修改的判断,判断依据为是否有id========
 const handleOk = async () => {
   if (!formState.imageUrl) {
     message.warning('请先上传图片')
@@ -339,20 +406,42 @@ const handleOk = async () => {
   }
 
   confirmLoading.value = true
-  try {
-    const res = await saveCarousel(formState)
-    if (res.data.code === 0) {
-      message.success('保存成功')
-      visible.value = false
-      resetForm()
-      // 这里可以触发列表刷新 logic
-    } else {
-      message.error('保存失败：' + (res.data.message || '未知错误'))
+  console.log('formState.id' + formState.id)
+  if (formState.id != null) {
+    console.log('这是修改操作')
+    try {
+      const res = await update(formState)
+      if (res.data.code === 0) {
+        message.success('修改成功')
+        visible.value = false
+        resetForm()
+        fetchLocations()
+      } else {
+        message.error('修改失败：' + (res.data.message || '未知错误'))
+      }
+    } catch (error) {
+      message.error('修改过程中出现了报错')
+    } finally {
+      confirmLoading.value = false
     }
-  } catch (error) {
-    message.error('保存过程中出现错误')
-  } finally {
-    confirmLoading.value = false
+  } else {
+    try {
+      const res = await saveCarousel(formState)
+      if (res.data.code === 0) {
+        message.success('保存成功')
+        visible.value = false
+        resetForm()
+        // 这里需要再刷新list函数
+        fetchLocations()
+        // 这里可以触发列表刷新 logic
+      } else {
+        message.error('保存失败：' + (res.data.message || '未知错误'))
+      }
+    } catch (error) {
+      message.error('保存过程中出现错误')
+    } finally {
+      confirmLoading.value = false
+    }
   }
 }
 
@@ -366,7 +455,7 @@ const currentLocationName = computed(() => {
   // 从我们早就查好的 locationList 里面，找 id 等于当前选中 id 的那个对象
   const currentId = locationTypeForcarouselSaveKey.value
   //todo ====================================查一下这是什么语法？================================================
-  const target = locationList.value.find(item => String(item.id) === String(currentId))
+  const target = locationList.value.find((item) => String(item.id) === String(currentId))
 
   // 如果找到了就返回 name，没找到就返回个默认提示
   return target ? target.name : '未找到位置名称'
@@ -378,7 +467,7 @@ const resetForm = () => {
   //这样写写台潦草了，需要拿着这个去调用函数找到名称，这样更加的直观一些
   //不可以这样写，只能在显示部分做手脚
   formState.locationType = Number(locationTypeForcarouselSaveKey.value)
-  formState.sortOrder = 0
+  formState.displayOrder = 0
 }
 </script>
 
@@ -447,7 +536,7 @@ const resetForm = () => {
   font-size: 12px;
   font-weight: bold;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .status-active {

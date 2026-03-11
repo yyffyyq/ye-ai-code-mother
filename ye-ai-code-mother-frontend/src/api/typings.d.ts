@@ -11,6 +11,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseCarouselManagerVO = {
+    code?: number
+    data?: CarouselManagerVO
+    message?: string
+  }
+
   type BaseResponseListCarouselLocation = {
     code?: number
     data?: CarouselLocation[]
@@ -32,6 +38,12 @@ declare namespace API {
   type BaseResponseLong = {
     code?: number
     data?: number
+    message?: string
+  }
+
+  type BaseResponsePageCarouselManagerVO = {
+    code?: number
+    data?: PageCarouselManagerVO
     message?: string
   }
 
@@ -71,7 +83,7 @@ declare namespace API {
     id?: number
     imageUrl?: string
     locationType?: number
-    sortOrder?: number
+    displayOrder?: number
     auditStatus?: number
     createTime?: string
     updateTime?: string
@@ -79,16 +91,23 @@ declare namespace API {
   }
 
   type CarouselManagerDto = {
+    pageNum?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
     id?: number
     imageUrl?: string
     locationType?: number
-    sortOrder?: number
+    displayOrder?: number
   }
 
   type CarouselManagerVO = {
+    id?: number
     imageUrl?: string
-    sortOrder?: number
+    displayOrder?: number
     isDeleted?: number
+    createTime?: string
+    updateTime?: string
   }
 
   type DeleteRequest = {
@@ -126,10 +145,6 @@ declare namespace API {
     updateTime?: string
   }
 
-  type page1Params = {
-    page: PageCarouselLocation
-  }
-
   type PageCarouselLocation = {
     records?: CarouselLocation[]
     pageNumber?: number
@@ -139,8 +154,8 @@ declare namespace API {
     optimizeCountQuery?: boolean
   }
 
-  type PageCarouselManager = {
-    records?: CarouselManager[]
+  type PageCarouselManagerVO = {
+    records?: CarouselManagerVO[]
     pageNumber?: number
     pageSize?: number
     totalPage?: number
@@ -149,7 +164,7 @@ declare namespace API {
   }
 
   type pageParams = {
-    page: PageCarouselManager
+    page: PageCarouselLocation
   }
 
   type PageUserVO = {
