@@ -1,5 +1,6 @@
 package com.ye.yeaicodemother.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -10,6 +11,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
+
+    // 从配置文件读取目录
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+    // 从配置文件读取域名
+    @Value("${file.domain}")
+    private String domain;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -31,7 +39,10 @@ public class CorsConfig implements WebMvcConfigurer {
          * 将 /images/** 的请求映射到物理磁盘路径
          */
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:E:/server/yfy-ai-code-master/src/main/resources/static/images/");
+                .addResourceLocations("file:"+uploadDir+"/images/");
+        ///临时文件夹路径映像
+        registry.addResourceHandler("/tmp/**")
+                .addResourceLocations("file:"+uploadDir+"/tmp/");
     }
 }
 

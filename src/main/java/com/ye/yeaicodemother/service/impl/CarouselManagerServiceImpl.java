@@ -18,6 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -64,7 +69,7 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
         //2.加上uuid避免重复然后
         String newFileName = UUID.randomUUID().toString().replace("-", "") + suffix;
         //3.下载到指定的文件夹里
-        File folder = new File(uploadDir);
+        File folder = new File(uploadDir+"/tmp/");
         if (!folder.exists()) {
             folder.mkdirs(); // 如果目录不存在，自动创建(包括多级父目录)
         }
@@ -77,7 +82,7 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
             throw new BusinessException(ErrorCode.CAROUSESLMANAGER_ERROR);
         }
         //6.返回成功的提示,并返回存储路径用户在填写信息的时候可以看到图片
-        return "/images/" + newFileName;
+        return "/tmp/" + newFileName;
     }
 
     @Override
@@ -101,6 +106,29 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
         //判断冲突
         if (count > 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "该位置的排序序号已被占用，请更换排序或位置");
+        }
+        if (imageUrl != null && imageUrl.startsWith("/tmp/")) {
+            // 提取纯文件名，例如 "tmp/abc.jpg" 提取出 "abc.jpg"
+            String fileName = imageUrl.replace("/tmp/", "");
+            Path sourcePath = Paths.get(uploadDir, "tmp", fileName);
+            Path targetPath = Paths.get(uploadDir, "images", fileName);
+            try {
+                // 如果 images 文件夹不存在，先创建它
+                if (!Files.exists(targetPath.getParent())) {
+                    Files.createDirectories(targetPath.getParent());
+                }
+
+                // 将文件从 tmp 移动到 images 目录下 (REPLACE_EXISTING 表示如果同名就覆盖)
+                if (Files.exists(sourcePath)) {
+                    Files.move(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    // 移动成功后，把准备存入数据库的路径更新为正式路径
+                    imageUrl = "/images/" + fileName;
+                } else {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "临时文件不存在，请重新上传图片");
+                }
+            } catch (IOException e) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片保存失败，服务器文件操作异常");
+            }
         }
         //判断之后将数据存储到数据库中
         CarouselManager carouselManager = new CarouselManager();

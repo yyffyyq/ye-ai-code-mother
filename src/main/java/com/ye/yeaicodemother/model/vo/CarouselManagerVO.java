@@ -1,5 +1,7 @@
 package com.ye.yeaicodemother.model.vo;
 
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
 import lombok.Data;
 
 /**
@@ -7,6 +9,11 @@ import lombok.Data;
  */
 @Data
 public class CarouselManagerVO {
+    /**
+     * 轮播图编号 (主键)
+     */
+    private Long id;
+
     /**
      * 图片地址/路径 (前端展示必用)
      */
