@@ -78,7 +78,7 @@
                   <!--卡片底部操作按钮-->
                   <template #actions>
                     <div class="action-item"><swap-outlined /> {{ item.sortOrder }}</div>
-                    <edit-outlined key="edit" />
+                    <edit-outlined key="edit" @click="showModalForEdit(item)" />
                     <delete-outlined key="delete" />
                   </template>
                 </a-card>
@@ -113,6 +113,13 @@
           :custom-request="handleUpload"
           accept="image/*"
         >
+          <template v-if="formState.imageUrl">
+            <img
+              :src="getUrl(formState.imageUrl)"
+              alt="轮播图"
+              style="width: 100%; max-height: 200px; object-fit: contain;"
+            />
+          </template>
           <p class="ant-upload-drag-icon">
             <inbox-outlined />
           </p>
@@ -130,6 +137,10 @@
       </a-form-item>
     </a-form>
   </a-modal>
+
+
+
+
 </template>
 
 <script lang="ts" setup>
@@ -137,12 +148,14 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { PlusOutlined, InboxOutlined, PictureOutlined, EditOutlined, DeleteOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { upload, saveCarousel,getCarouselBylocationType} from '@/api/carouselManagerController.ts'
-import { list,getInfo1 } from '@/api/carouselLocationController.ts'
+import { list} from '@/api/carouselLocationController.ts'
 import CarouselManagementLayout from './layout/CarouselManagementLayout.vue'
+import * as path from 'node:path'
 
 
-// ================= 导航栏 (位置分类) 相关逻辑 =================
-// ================= 获取轮播图信息通过locationTypeid=======
+
+// =============================== 导航栏 (位置分类) 相关逻辑 =================
+// =============================== 获取轮播图信息通过locationTypeid===========
 // 用于存放当前选中位置的轮播图列表数据
 const carouselList = ref<any[]>([])
 // 用于控制加载中的 loading 圈圈
@@ -158,17 +171,19 @@ const handleMenuClick = (menuInfo: any) => {
   if (selectedLocationId === 'config') return
   //拿到当前导航栏的值
   locationTypeForcarouselSaveKey.value = selectedLocationId
-  // TODO: 在这里调用根据位置 ID 获取轮播图列表的接口
+  // 在这里调用根据位置 ID 获取轮播图列表的接口
 
   fetchCarouselData(selectedLocationId)
 }
 const fetchCarouselData =async (selectLocationId: String)=>{
   try{
+    // 调用API接口获取对应位置所属的轮播图列表
     const res = await getCarouselBylocationType({
       location_type:Number(selectLocationId)
     })
     if(res.data.code == 0){
-      console.log(res.data.data)
+      // 赋值给轮播图列表用于展示
+      // console.log(res.data.data)
       carouselList.value = res.data.data || []
       // message.success("查询成功")
     }
@@ -177,7 +192,23 @@ const fetchCarouselData =async (selectLocationId: String)=>{
     console.log("查询失败"+error)
   }
 }
-// 【新增】：万能图片路径转换函数
+// ===========================兼容images文件夹的图片和tmp文件夹的图片===============
+const getUrl = (path:string) =>{
+  // 统一后端基地址 (包含 /api)
+  const baseUrl = "http://localhost:8989/api"
+  if (!path) return '';
+
+  // 1. 如果已经是完整的网络链接，直接用
+  if (path.startsWith('http')) {
+    return path;
+  }
+  // 判断图片前缀
+  if(path.startsWith("/tmp/")||path.startsWith("/images/")){
+    return `${baseUrl}${path}`;
+  }
+}
+
+// ==========================只兼容转换images文件夹下的路径======================
 const getImageUrl = (path: string) => {
   if (!path) return '';
 
@@ -189,12 +220,6 @@ const getImageUrl = (path: string) => {
   // 统一后端基地址 (包含 /api)
   const baseUrl = "http://localhost:8989/api"
 
-  // 2. 兼容旧数据：如果是本地绝对路径，截取文件名
-  if (path.includes(':\\') || path.includes(':/')) {
-    const lastIndex = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
-    const fileName = path.substring(lastIndex + 1);
-    return `${baseUrl}/images/${fileName}`;
-  }
 
   // 3. 兼容新数据：如果是后端的相对路径 (比如 /images/xxx.png)
   if (path.startsWith('/images/')) {
@@ -206,7 +231,7 @@ const getImageUrl = (path: string) => {
 }
 
 
-// =================存放从后端获取的位置列表数据
+// ===================================存放从后端获取的位置列表数据=============
 const locationList = ref<any[]>([])
 // 当前选中的导航栏 key (Ant Design 的 selectedKeys 必须是数组，并且 key 通常建议转成字符串)
 const activeMenuKey = ref<string[]>([])
@@ -234,31 +259,43 @@ const fetchLocations = async ()=>{
   }
 }
 // 页面一进入就自动执行
+//钩子函数
 onMounted(() => {
   fetchLocations()
 })
-
-
-// ================= 轮播图添加相关逻辑 =================
+// ====================新增或者修改时所需数据=======================
 // 控制弹窗显示
 const visible = ref<boolean>(false)
 const confirmLoading = ref<boolean>(false)
 const uploading = ref<boolean>(false)
 const fileList = ref<any[]>([])
-
-// 表单数据
+// 新增/修改表单数据
 const formState = reactive<API.CarouselManagerDto>({
   imageUrl: '',
   locationType: 0,
   sortOrder: 0,
 })
 
-// 显示弹窗
+// ================= 轮播图编辑相关逻辑 ============================
+// 编辑轮播图显示弹窗方法
+const showModalForEdit = (item:API.CarouselManagerDto | any) =>{
+  //在点击轮播图编辑时赋值该值给表单数据
+  Object.assign(formState, item);
+  //清除上传组件的UI列表
+  fileList.value = []
+  //这里的展示弹窗可能需要修改，因为我所需要的弹窗是需要图片的回显，然后可以修改上传图片
+  //显示弹窗
+  visible.value = true
+}
+
+
+// ================= 轮播图添加相关逻辑 =================
+
+// 新增显示弹窗方法
 const showModal = () => {
   resetForm()          // 打开前先清空旧的业务数据
   fileList.value = []  // 打开前清空上传组件的 UI 列表
   visible.value = true
-
 }
 
 // 图片上传处理
@@ -280,6 +317,7 @@ const handleUpload = async (options: any) => {
     if (res.data.code === 0 && res.data.data) {
       formState.imageUrl = res.data.data
       message.success('图片上传成功')
+      console.log(formState.imageUrl)
       onSuccess(res.data)
     } else {
       message.error('图片上传失败：' + (res.data.message || '未知错误'))
@@ -293,7 +331,7 @@ const handleUpload = async (options: any) => {
   }
 }
 
-// ==================================================================提交表单
+// ==================================提交表单================================
 const handleOk = async () => {
   if (!formState.imageUrl) {
     message.warning('请先上传图片')
@@ -327,7 +365,7 @@ const handleCancel = () => {
 const currentLocationName = computed(() => {
   // 从我们早就查好的 locationList 里面，找 id 等于当前选中 id 的那个对象
   const currentId = locationTypeForcarouselSaveKey.value
-  //todo 这是什么语法？
+  //todo ====================================查一下这是什么语法？================================================
   const target = locationList.value.find(item => String(item.id) === String(currentId))
 
   // 如果找到了就返回 name，没找到就返回个默认提示
