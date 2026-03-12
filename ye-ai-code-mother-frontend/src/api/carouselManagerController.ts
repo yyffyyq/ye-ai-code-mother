@@ -2,6 +2,67 @@
 /* eslint-disable */
 import request from '@/request'
 
+/** 批量更新 批量更新传入数据sortorder POST /carouselManager/batchUpdate/ByIdList */
+export async function batchUpdateByIdList(body: number[], options?: { [key: string]: any }) {
+  return request<API.BaseResponseString>('/carouselManager/batchUpdate/ByIdList', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 编辑图片描述和活动时间 编辑图片描述和活动时间 POST /carouselManager/editDescription */
+export async function editDescription(
+  body: API.CarouselDescriptionDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/carouselManager/editDescription', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 获取图片描述和时间 用于数据回显 GET /carouselManager/getByIdForDescription/${param0} */
+export async function getByIdForDescription(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getByIdForDescriptionParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params
+  return request<API.BaseResponseCarouselDescriptionVO>(
+    `/carouselManager/getByIdForDescription/${param0}`,
+    {
+      method: 'GET',
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  )
+}
+
+/** 不分页查询 根据位置类型查询轮播图 GET /carouselManager/getByLocationType/${param0} */
+export async function getByLocationType(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getByLocationTypeParams,
+  options?: { [key: string]: any }
+) {
+  const { carouselLocationType: param0, ...queryParams } = params
+  return request<API.BaseResponseListCarouselImageUrlVO>(
+    `/carouselManager/getByLocationType/${param0}`,
+    {
+      method: 'GET',
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  )
+}
+
 /** 根据位置获取轮播图列表 传入位置类型的ID（例如：1-首页，2-副页），返回该位置下的所有轮播图数据 GET /carouselManager/getCarouselBylocationType/${param0} */
 export async function getCarouselBylocationType(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)

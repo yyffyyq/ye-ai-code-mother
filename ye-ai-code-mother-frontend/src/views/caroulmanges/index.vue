@@ -39,6 +39,7 @@
           </div>
 
           <a-list
+            class="draggable-list"
             v-else
             :grid="{ gutter: 24, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 4 }"
             :data-source="carouselList"
@@ -72,9 +73,11 @@
                   </a-card-meta>
 
                   <template #actions>
-                    <div class="action-item">
-                      <swap-outlined /> {{ item.sortOrder || item.displayOrder }}
+                    <!--按住拖拽功能-->
+                    <div class="action-item drag-handle" title="按住拖拽排序">
+                      <swap-outlined />
                     </div>
+                    <file-text-outlined key="description" title="修改描述" @click="showDescriptionModal(item)" />
                     <edit-outlined key="edit" @click="showModalForEdit(item)" />
                     <delete-outlined key="delete" @click="deleteCarousel(item)" />
                   </template>
@@ -129,12 +132,59 @@
           {{ currentLocationName }}
         </a-tag>
       </a-form-item>
-      <a-form-item label="排序权重">
-        <a-input-number
-          v-model:value="formState.displayOrder"
-          :min="0"
-          placeholder="数值越大越靠前"
+    </a-form>
+  </a-modal>
+<!--描述编辑弹窗部分-->
+  <a-modal
+    v-model:visible="descriptionModalVisible"
+    title="修改轮播图描述"
+    :confirm-loading="descriptionConfirmLoading"
+    @ok="handleDescriptionSubmit"
+    @cancel="handleDescriptionCancel"
+    destroyOnClose
+  >
+    <a-form
+      ref="descriptionFormRef"
+      :model="descriptionFormData"
+      :label-col="{ span: 5 }"
+      :wrapper-col="{ span: 18 }"
+    >
+      <a-form-item
+        label="描述内容"
+        name="description"
+        :rules="[{ required: true, message: '请输入描述内容' }]"
+      >
+        <a-textarea
+          v-model:value="descriptionFormData.description"
+          placeholder="请输入轮播图的文字描述..."
+          :rows="4"
+          allow-clear
+        />
+      </a-form-item>
+
+      <a-form-item
+        label="描述时间"
+        name="descriptionTime"
+        :rules="[{ required: true, message: '请选择描述时间' }]"
+      >
+        <a-date-picker
+          v-model:value="descriptionFormData.descriptionTime"
+          valueFormat="YYYY-MM-DD"
+          placeholder="请选择日期"
           style="width: 100%"
+          allow-clear
+        />
+      </a-form-item>
+      <a-form-item
+        label="图片超链接"
+        name="hrefUrl"
+        :rules="[{ required: true, message: '图片超链接' }]"
+      >
+        <a-textarea
+          v-model:value="descriptionFormData.hrefUrl"
+          placeholder="图片超链接..."
+          :rows="4"
+          allow-clear
         />
       </a-form-item>
     </a-form>
@@ -142,30 +192,33 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, createVNode, onMounted, reactive, ref } from 'vue'
+import { computed, createVNode, onMounted, reactive, ref, watch,nextTick } from 'vue'
 import {
   PlusOutlined,
   InboxOutlined,
   PictureOutlined,
   EditOutlined,
   DeleteOutlined,
-  SwapOutlined, ExclamationCircleOutlined
+  SwapOutlined, ExclamationCircleOutlined,FileTextOutlined
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   upload,
   saveCarousel,
   update,
-  listCarouselManagerPageVo, remove
+  listCarouselManagerPageVo, remove, batchUpdateByIdList, editDescription,getByIdForDescription
 } from '@/api/carouselManagerController.ts'
 import { list } from '@/api/carouselLocationController.ts'
 import CarouselManagementLayout from './layout/CarouselManagementLayout.vue'
 import dayjs from 'dayjs'
+import Sortable from 'sortablejs' // 引入 Sortable
 // =============================================格式化时间函数=======
 const formatTime = (time: string | null) => {
   if (!time) return ''
   return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
 }
+
+
 
 // =============================== 导航栏 (位置分类) 相关逻辑 =================
 // =============================== 获取轮播图信息通过locationTypeid===========
@@ -173,7 +226,7 @@ const formatTime = (time: string | null) => {
 const carouselList = ref<any[]>([])
 // 用于控制加载中的 loading 圈圈
 const loading = ref<boolean>(false)
-//==========制作一个变量用于存放点击之后变值，方便之后在点击添加轮播图的时候不需要再选择1、2、3
+//===============制作一个变量用于存放点击之后变值，方便之后在点击添加轮播图的时候不需要再选择1、2、3======
 const locationTypeForcarouselSaveKey = ref<string>('')
 // 分页配置对象
 const pagination = reactive({
@@ -220,6 +273,10 @@ const fetchCarouselData = async (selectLocationId: String | number) => {
       carouselList.value = pageData?.records || []
       // 更新分页总条数 (如果后端叫 totalRow，请把这里的 total 换成 totalRow)
       pagination.total = Number(pageData?.total || pageData?.totalRow || 0)
+      // 【新增】数据赋值完成后，等待 DOM 渲染完毕，然后初始化拖拽
+      nextTick(() => {
+        initDragSort()
+      })
     }
   } catch (error) {
     console.log('查询失败' + error)
@@ -324,9 +381,12 @@ const deleteCarousel = async (item: API.CarouselManagerDto | any) => {
         const res = await remove({ id: item.id });
         if (res.data.code === 0) {
           message.success("删除成功");
+          // 这里增加一个获取当前页面id
+          console.log("当前页为:"+locationTypeForcarouselSaveKey.value)
           //更新
-          fetchLocations()
-
+          // fetchLocations()
+          // 优化更新，原本这个fetchLocations()，直接就是回到第一个页面了，这不对，我需要在对应页面不要换
+          fetchCarouselData(locationTypeForcarouselSaveKey.value)
         } else {
           message.error("删除失败：" + (res.data.message || '未知错误'));
         }
@@ -415,7 +475,8 @@ const handleOk = async () => {
         message.success('修改成功')
         visible.value = false
         resetForm()
-        fetchLocations()
+        //编辑完后更新当前页
+        fetchCarouselData(locationTypeForcarouselSaveKey.value)
       } else {
         message.error('修改失败：' + (res.data.message || '未知错误'))
       }
@@ -431,8 +492,8 @@ const handleOk = async () => {
         message.success('保存成功')
         visible.value = false
         resetForm()
-        // 这里需要再刷新list函数
-        fetchLocations()
+        // 添加 完后更新当前页
+        fetchCarouselData(locationTypeForcarouselSaveKey.value)
         // 这里可以触发列表刷新 logic
       } else {
         message.error('保存失败：' + (res.data.message || '未知错误'))
@@ -455,6 +516,7 @@ const currentLocationName = computed(() => {
   // 从我们早就查好的 locationList 里面，找 id 等于当前选中 id 的那个对象
   const currentId = locationTypeForcarouselSaveKey.value
   //todo ====================================查一下这是什么语法？================================================
+  // 这行代码的作用是：在 locationList 这个数组中，把那个 id 和当前选中的 currentId 相同的对象给“揪”出来
   const target = locationList.value.find((item) => String(item.id) === String(currentId))
 
   // 如果找到了就返回 name，没找到就返回个默认提示
@@ -469,6 +531,159 @@ const resetForm = () => {
   formState.locationType = Number(locationTypeForcarouselSaveKey.value)
   formState.displayOrder = 0
 }
+
+/// ==========================前端拖拽效果==============================
+let sortableInstance: any = null
+
+const initDragSort = () => {
+  // a-list 开启 grid 模式后，底层会自动生成一个 .ant-row 容器
+  const wrapper = document.querySelector('.draggable-list .ant-row') as HTMLElement
+
+  if (wrapper) {
+    // 销毁旧实例，防止多次切换导航栏时重复绑定事件
+    if (sortableInstance) {
+      sortableInstance.destroy()
+    }
+
+    sortableInstance = Sortable.create(wrapper, {
+      handle: '.drag-handle', // 认准刚才你加的把手 class
+      animation: 150,         // 拖拽时的平滑过渡动画（毫秒）
+
+      // 拖拽松手后的回调
+      onEnd: (evt: any) => {
+        const { oldIndex, newIndex } = evt
+        // 位置没变直接 return
+        if (oldIndex === newIndex) return
+
+        // 【关键】由于现在“先不做插入操作”，我们只在前端数组里把元素换个位置，保证视图平滑
+        const movedItem = carouselList.value.splice(oldIndex, 1)[0]
+        carouselList.value.splice(newIndex, 0, movedItem)
+        // 将值传给函数去调用接口
+        console.log(carouselList.value.map(item => item.id))
+        Batchupdate(carouselList.value.map(item => item.id))
+      }
+    })
+  }
+}
+// 批量重新排序的api接口调用
+const Batchupdate = async(orderedIds:any[]) =>{
+  //启动加载
+  const hideLoading = message.loading('正在保存排序...', 0) // 0 表示不自动关闭
+  try{
+    const res = await batchUpdateByIdList(orderedIds)
+      if(res.data.code === 0){
+        hideLoading() // 关闭加载提示
+        message.success("修改成功")
+        setTimeout(() => {
+          // 先把原数组置空（这一步可以强行打断 Vue 的旧 DOM 缓存，强制刷新视图）
+          carouselList.value = []
+          fetchCarouselData(locationTypeForcarouselSaveKey.value)
+        }, 100)
+      }else{
+        hideLoading() // 关闭加载提示
+        message.error("修改失败")
+        fetchCarouselData(locationTypeForcarouselSaveKey.value)
+      }
+    }catch(error){
+      hideLoading()
+      message.error("网络异常，排序保存失败")
+      // 报错了同样需要还原页面
+      fetchCarouselData(locationTypeForcarouselSaveKey.value)
+  }finally {
+    //停下加载
+    hideLoading()
+  }
+}
+
+// ===================================编辑修改文本内容部分相关代码================
+// ===================================修改描述相关的响应式变量 =================
+const descriptionModalVisible = ref(false)
+const descriptionConfirmLoading = ref(false)
+const descriptionFormRef = ref() // 用于表单校验
+
+const descriptionFormData = ref({
+  id: undefined,
+  description: '',
+  descriptionTime: '',
+  hrefUrl:''
+})
+// ================= 弹窗操作逻辑 =================
+
+// 1. 点击列表里的图标，打开弹窗并回显数据
+const showDescriptionModal = async (item: any) => {
+  // 放到里面一会上面上传的时候还需要再用到
+  descriptionFormData.value.id = item.id
+  try{
+    // 调用接口方法实现
+    const res = await getByIdForDescription({ id: item.id})
+    if(res.data.code === 0){
+      descriptionFormData.value = {
+        id: item.id,
+        description: res.data.data?.description || '',
+        descriptionTime: res.data.data?.descriptionTime || '',
+        hrefUrl: res.data.data?.hrefUrl || ''
+      }
+      descriptionModalVisible.value = true
+    }else{
+      message.error('获取描述数据失败：' + (res.data.message || '未知错误'))
+    }
+  }catch(error){
+    console.error('请求回显接口异常:', error)
+    message.error('网络异常，获取数据失败')
+  }finally {
+    // 无论成功还是失败，都关掉刚才的 loading 提示
+
+  }
+}
+
+// 2. 点击弹窗的“确定”按钮提交数据
+const handleDescriptionSubmit = async () => {
+  try {
+    // 触发触发表单校验（确保必填项填了）
+    await descriptionFormRef.value.validate()
+
+    // 开启按钮 loading 动画，防止重复点击
+    descriptionConfirmLoading.value = true
+
+    // 调用后端刚刚写好的 setDescription 接口
+    // 注意：这里的 API 名字要换成你实际引入的函数名
+    const res = await editDescription(descriptionFormData.value)
+
+    if (res.data.code === 0) {
+      message.success('描述修改成功')
+      descriptionModalVisible.value = false // 关闭弹窗
+
+      // 【关键】修改成功后刷新列表，让页面显示最新的描述
+      // 请确保 locationTypeForcarouselSaveKey.value 是你当前列表的位置类型
+      fetchCarouselData(locationTypeForcarouselSaveKey.value)
+    } else {
+      message.error('修改失败：' + (res.data.message || '未知错误'))
+    }
+  } catch (error: any) {
+    // 如果是表单校验没通过，error 里会有 errorFields，我们不需要弹出报错提示
+    if (!error.errorFields) {
+      console.error(error)
+      message.error('网络请求失败')
+    }
+  } finally {
+    // 无论成功失败，关掉 loading
+    descriptionConfirmLoading.value = false
+  }
+}
+
+// 3. 点击取消或右上角 X 关闭弹窗
+const handleDescriptionCancel = () => {
+  descriptionModalVisible.value = false
+  // 重置表单，防止下次打开时还有旧数据或报错红框
+  if (descriptionFormRef.value) {
+    descriptionFormRef.value.resetFields()
+  }
+}
+
+
+
+
+// =============================================================================
 </script>
 
 <style scoped>
@@ -586,5 +801,15 @@ const resetForm = () => {
   color: #1890ff;
   font-style: normal;
   text-decoration: underline;
+}
+
+/* ==========================拖拽把手样式================================ */
+.drag-handle {
+  cursor: grab; /* 鼠标悬浮时显示张开的手势 */
+}
+
+/* 鼠标按住不放时的样式 */
+.drag-handle:active {
+  cursor: grabbing; /* 按下时显示紧握的手势 */
 }
 </style>

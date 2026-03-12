@@ -11,9 +11,21 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseCarouselDescriptionVO = {
+    code?: number
+    data?: CarouselDescriptionVO
+    message?: string
+  }
+
   type BaseResponseCarouselManagerVO = {
     code?: number
     data?: CarouselManagerVO
+    message?: string
+  }
+
+  type BaseResponseListCarouselImageUrlVO = {
+    code?: number
+    data?: CarouselImageUrlVO[]
     message?: string
   }
 
@@ -71,6 +83,25 @@ declare namespace API {
     message?: string
   }
 
+  type CarouselDescriptionDTO = {
+    id?: number
+    hrefUrl?: string
+    description?: string
+    descriptionTime?: string
+  }
+
+  type CarouselDescriptionVO = {
+    hrefUrl?: string
+    description?: string
+    descriptionTime?: string
+  }
+
+  type CarouselImageUrlVO = {
+    imageUrl?: string
+    displayOrder?: number
+    isDeleted?: number
+  }
+
   type CarouselLocation = {
     id?: number
     name?: string
@@ -88,6 +119,9 @@ declare namespace API {
     createTime?: string
     updateTime?: string
     isDeleted?: number
+    hrefUrl?: string
+    description?: string
+    descriptionTime?: string
   }
 
   type CarouselManagerDto = {
@@ -112,6 +146,14 @@ declare namespace API {
 
   type DeleteRequest = {
     id?: number
+  }
+
+  type getByIdForDescriptionParams = {
+    id: number
+  }
+
+  type getByLocationTypeParams = {
+    carouselLocationType: number
   }
 
   type getCarouselBylocationTypeParams = {
