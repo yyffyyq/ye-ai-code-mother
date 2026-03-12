@@ -2,8 +2,12 @@ package com.ye.yeaicodemother.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import com.ye.yeaicodemother.model.dto.carouselManager.CarouselDescriptionDTO;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.entity.CarouselManager;
+import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionAndImageUrlVO;
+import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionVO;
+import com.ye.yeaicodemother.model.vo.Carousel.CarouselImageUrlVO;
 import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,4 +82,38 @@ public interface CarouselManagerService extends IService<CarouselManager> {
      * @return
      */
     String RemoveById(Long id);
+
+    /**
+     * 获取最大的sortorder的值
+     * @return
+     */
+    Integer MaxSortOrderNumber(Integer locationType);
+
+    /**
+     * // 批量更新数据库
+     * @param listId
+     * @return
+     */
+    boolean updateBatchById(List<Long> listId);
+
+    /**
+     * 通过位置localtionID查询并封装
+     * @param carouselLocationType 轮播图位置参数
+     * @return
+     */
+    List<CarouselDescriptionAndImageUrlVO> getCarouselVoListByLocationTypeId(Integer carouselLocationType);
+
+    /**
+     * 将描述存入数据库
+     * @param carouselDescriptionDTO 描述的值
+     * @return
+     */
+    boolean setDescription(CarouselDescriptionDTO carouselDescriptionDTO);
+
+    /**
+     * 获取图片描述
+     * @param id 图片id
+     * @return
+     */
+    CarouselDescriptionVO getByIdForDescription(Long id);
 }

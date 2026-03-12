@@ -1,12 +1,17 @@
 package com.ye.yeaicodemother.controller;
 
+import com.fasterxml.jackson.databind.ser.Serializers;
 import com.mybatisflex.core.paginate.Page;
 import com.ye.yeaicodemother.common.BaseResponse;
 import com.ye.yeaicodemother.common.ResultUtils;
 import com.ye.yeaicodemother.exception.BusinessException;
 import com.ye.yeaicodemother.exception.ErrorCode;
 import com.ye.yeaicodemother.exception.ThrowUtils;
+import com.ye.yeaicodemother.model.dto.carouselManager.CarouselDescriptionDTO;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
+import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionAndImageUrlVO;
+import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionVO;
+import com.ye.yeaicodemother.model.vo.Carousel.CarouselImageUrlVO;
 import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
 import com.ye.yeaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +23,7 @@ import com.ye.yeaicodemother.service.CarouselManagerService;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import javax.xml.transform.Result;
 import java.io.File;
 import java.util.List;
 
@@ -47,9 +53,6 @@ public class CarouselManagerController {
         //返回值用于回显
         return ResultUtils.success(Result);
     }
-
-
-
     /**
      * 上传轮播图。
      * @param file 轮播图名称
@@ -154,5 +157,62 @@ public class CarouselManagerController {
         carouselManagerVOPage.setRecords(carouselManagerVOList);
         //返回数据
         return ResultUtils.success(carouselManagerVOPage);
+    }
+
+    @PostMapping("/batchUpdate/ByIdList")
+    @Operation(summary = "批量更新", description = "批量更新传入数据sortorder")
+    public BaseResponse<String> batchUpdateByIdList(@RequestBody List<Long> listId) {
+        //判断是否为空传入的值
+        ThrowUtils.throwIf(listId == null, ErrorCode.PARAMS_ERROR);
+        // 批量更新数据库
+        boolean success = carouselManagerService.updateBatchById(listId);
+
+        if (success) {
+            return ResultUtils.success("成功");
+        } else {
+            return ResultUtils.success("错误");
+        }
+
+    }
+
+
+    @GetMapping("/getByLocationType/{carouselLocationType}")
+    @Operation(summary = "不分页查询", description = "根据位置类型查询轮播图")
+    public BaseResponse<List<CarouselDescriptionAndImageUrlVO>> getByLocationType(@PathVariable Integer carouselLocationType) {
+
+        // 参数校验
+        ThrowUtils.throwIf(carouselLocationType == null, ErrorCode.PARAMS_ERROR);
+
+        // 调用 Service 层查询
+        List<CarouselDescriptionAndImageUrlVO> carouselManagerVOList = carouselManagerService.getCarouselVoListByLocationTypeId(carouselLocationType);
+
+        // 返回成功结果
+        return ResultUtils.success(carouselManagerVOList);
+    }
+
+    /**
+     * 这里需要一个接口来上传图片描述和活动时间设置
+     */
+    @PostMapping("/editDescription")
+    @Operation(summary = "编辑图片描述和活动时间", description = "编辑图片描述和活动时间")
+    public BaseResponse<Boolean> editDescription(@RequestBody CarouselDescriptionDTO carouselDescriptionDTO) {
+        /// 参数校验
+        ThrowUtils.throwIf(carouselDescriptionDTO == null, ErrorCode.PARAMS_ERROR);
+        /// 创建方法去存入数据库
+        boolean Result = carouselManagerService.setDescription(carouselDescriptionDTO);
+        /// 返回成功
+        return ResultUtils.success(Result);
+
+    }
+
+    /**
+     * 封装返回用于回显描述
+     */
+    @GetMapping("/getByIdForDescription/{id}")
+    @Operation(summary = "获取图片描述和时间", description = "用于数据回显")
+    public BaseResponse<CarouselDescriptionVO> getByIdForDescription(@PathVariable Long id) {
+        ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR);
+        CarouselDescriptionVO Result = carouselManagerService.getByIdForDescription(id);
+        return ResultUtils.success(Result);
     }
 }

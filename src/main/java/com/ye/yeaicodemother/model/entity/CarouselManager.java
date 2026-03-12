@@ -72,4 +72,19 @@ public class CarouselManager implements Serializable {
      */
     private Integer isDeleted;
 
+    /**
+     * 描述对于图片的
+     */
+    private String Description;
+
+    /**
+     * 一些图片上面需要活动时间
+     */
+    private String DescriptionTime;
+    /**
+     * 图片超链接
+     */
+    @Column("href_url")
+    private String hrefUrl;
+
 }

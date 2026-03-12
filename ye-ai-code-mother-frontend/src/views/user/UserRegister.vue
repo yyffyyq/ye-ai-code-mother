@@ -1,7 +1,6 @@
 <template>
   <div id="userRegister">
-    <h2 class="title">Ai代码生成 - 用户注册</h2>
-    <div class="desc">0代码生成项目</div>
+    <h2 class="title">Jintu网站管理用户注册</h2>
   </div>
   <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
     <a-form-item
