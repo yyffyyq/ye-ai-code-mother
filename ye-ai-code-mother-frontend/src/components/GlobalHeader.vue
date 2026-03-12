@@ -153,60 +153,104 @@ const handleMenuClick: MenuProps['onClick'] = (e) => {
 </script>
 
 <style scoped>
+/* ================== 顶部导航栏整体样式 ================== */
 .header {
-  /* 使用一个清爽的淡蓝色作为背景 */
-  background: #2e6da5;
-  padding: 4px 24px;
+  /* 使用清新淡蓝色背景 (带有极轻微的渐变显得更通透) */
+  background: linear-gradient(90deg, #e6f7ff 0%, #f0f5ff 100%);
+  padding: 0 24px;
+  height: 64px; /* Ant Design 标准高度 */
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.08); /* 阴影也带一点点微弱的蓝色呼应 */
+  position: sticky; /* 吸顶效果 */
+  top: 0;
+  z-index: 100;
 }
 
+/* 强制 a-row 内部垂直居中 (因为不改 template，所以用深度选择器) */
+.header :deep(.ant-row) {
+  height: 64px;
+  align-items: center;
+}
+
+/* ================== 左侧 Logo 区域 ================== */
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  height: 48px;
-  /* 移除固定宽度，或者使用 object-fit 保持内容比例 */
-  max-width: 100%;
-  object-fit: contain;
-}
-
-/* 修改部分：标题渐变色 */
-.site-title {
-  margin: 0;
-  font-size: 18px;
-  /* 这里的渐变是从 AntD 的主色 #1890ff 到一个更浅的青蓝色 #69c0ff */
-  background: linear-gradient(to right, #1890ff, #69c0ff);
-  -webkit-background-clip: text; /* 兼容 Webkit 内核浏览器 */
-  background-clip: text;
-  -webkit-text-fill-color: transparent; /* 文字填充透明，显示背景渐变 */
-  color: #1890ff; /* 降级兼容：不支持渐变的浏览器显示纯色 */
-  font-weight: bold;
-}
-
-.ant-menu-horizontal {
-  border-bottom: none !important;
-  /* 确保菜单背景透明，跟随父级 header 的底色 */
-  background: transparent !important;
-  /* 调整行高让文字居中对齐 */
-  line-height: 48px;
-}
-
-/* 修改部分：用户区域布局 */
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 12px; /* 这里控制头像和名字的间距 */
+  height: 100%;
   cursor: pointer;
 }
 
-.user-name {
-  color: rgba(0, 0, 0, 0.85);
+.logo {
+  height: 36px; /* 稍微缩小一点，更显精致 */
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.header-left:hover .logo {
+  transform: scale(1.06); /* 鼠标悬浮 Logo 轻微放大 */
+}
+
+/* ================== 中间导航菜单样式 ================== */
+/* 穿透修改 Antd 默认菜单样式 */
+.header :deep(.ant-menu-horizontal) {
+  border-bottom: none !important;
+  background: transparent !important;
+  line-height: 64px; /* 和头部高度保持一致，保证指示条在最底部 */
+  font-size: 15px;
   font-weight: 500;
 }
 
+/* ================== 右侧用户操作区域 ================== */
+.user-login-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+/* 利用 CSS 让头像和名字强行水平居中对齐 (针对 v-if 那个 div) */
+.user-login-status > div {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* 头像和名字的间距 */
+}
+
+/* 头像微调 */
 .img-avart {
-  /* 如果需要微调头像大小可以在这里写 */
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+
+.img-avart:hover {
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.12); /* 头像悬浮发光感 */
+}
+
+/* 下拉触发文字样式 */
+.ant-dropdown-link {
+  color: #333333; /* 配合白底改成深灰色 */
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px; /* 文字和箭头的间距 */
+  transition: color 0.3s;
+  text-decoration: none;
+}
+
+.ant-dropdown-link:hover {
+  color: #1890ff; /* 悬浮变回 Antd 主题蓝 */
+}
+
+/* 箭头悬浮翻转动画 */
+.ant-dropdown-link :deep(.anticon-down) {
+  transition: transform 0.3s;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.ant-dropdown-link:hover :deep(.anticon-down) {
+  transform: rotate(180deg); /* 悬浮时箭头优雅翻转 */
+  color: #1890ff;
 }
 </style>
