@@ -1,6 +1,5 @@
 package com.ye.yeaicodemother.service.impl;
 
-import ch.qos.logback.core.spi.ErrorCodes;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
@@ -11,12 +10,10 @@ import com.ye.yeaicodemother.exception.BusinessException;
 import com.ye.yeaicodemother.exception.ErrorCode;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselDescriptionDTO;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
-import com.ye.yeaicodemother.model.entity.CarouselManager;
+import com.ye.yeaicodemother.model.entity.carousel.CarouselManager;
 import com.ye.yeaicodemother.mapper.CarouselManagerMapper;
 import com.ye.yeaicodemother.model.vo.Carousel.CarouselBatchupByIdVO;
 import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionAndImageUrlVO;
-import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionVO;
-import com.ye.yeaicodemother.model.vo.Carousel.CarouselImageUrlVO;
 import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
 import com.ye.yeaicodemother.service.CarouselManagerService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -431,14 +428,14 @@ public class CarouselManagerServiceImpl extends ServiceImpl<CarouselManagerMappe
      * @return
      */
     @Override
-    public CarouselDescriptionVO getByIdForDescription(Long id) {
+    public CarouselDescriptionAndImageUrlVO getByIdForDescription(Long id) {
         /// 创建sql语句
         QueryWrapper queryWrapper = QueryWrapper.create()
                 .eq(CarouselManager::getId, id);
         /// 调用sql语句并赋值
         CarouselManager carouselManager = this.getOne(queryWrapper);
         /// 进行封装
-        CarouselDescriptionVO vo = new CarouselDescriptionVO();
+        CarouselDescriptionAndImageUrlVO vo = new CarouselDescriptionAndImageUrlVO();
         // todo 这里有问题，不能读取到href_url的值
         BeanUtils.copyProperties(carouselManager,vo);
         /// 返回封装值

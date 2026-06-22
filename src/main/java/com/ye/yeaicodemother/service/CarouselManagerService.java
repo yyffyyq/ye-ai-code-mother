@@ -4,15 +4,12 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselDescriptionDTO;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
-import com.ye.yeaicodemother.model.entity.CarouselManager;
+import com.ye.yeaicodemother.model.entity.carousel.CarouselManager;
 import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionAndImageUrlVO;
-import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionVO;
-import com.ye.yeaicodemother.model.vo.Carousel.CarouselImageUrlVO;
 import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -115,5 +112,5 @@ public interface CarouselManagerService extends IService<CarouselManager> {
      * @param id 图片id
      * @return
      */
-    CarouselDescriptionVO getByIdForDescription(Long id);
+    CarouselDescriptionAndImageUrlVO getByIdForDescription(Long id);
 }

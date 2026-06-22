@@ -23,5 +23,7 @@ public interface UserConstant {
      */
     String ADMIN_ROLE = "admin";
 
+
+    String FINACION_ROLE = "finance";
     // endregion
 }

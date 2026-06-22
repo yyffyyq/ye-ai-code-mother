@@ -2,14 +2,11 @@ package com.ye.yeaicodemother.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
-import com.ye.yeaicodemother.model.dto.UserQueryRequest;
-import com.ye.yeaicodemother.model.entity.CarouselManager;
-import com.ye.yeaicodemother.model.entity.User;
-import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
+import com.ye.yeaicodemother.model.dto.userDto.UserQueryRequest;
+import com.ye.yeaicodemother.model.entity.user.User;
 import com.ye.yeaicodemother.model.vo.LoginUserVO;
 import com.ye.yeaicodemother.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.ye.yeaicodemother.model.entity;
+package com.ye.yeaicodemother.model.entity.carousel;
 
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
@@ -6,13 +6,14 @@ import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-
+import com.mybatisflex.core.keygen.KeyGenerators;
 import java.io.Serial;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 
 /**
  *  实体类。
@@ -32,7 +33,7 @@ public class CarouselManager implements Serializable {
     /**
      * 轮播图编号 (主键)
      */
-    @Id(keyType = KeyType.Auto)
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
     private Long id;
 
     /**

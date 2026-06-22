@@ -272,7 +272,7 @@ const fetchCarouselData = async (selectLocationId: String | number) => {
       // 赋值给列表，如果没有数据则给空数组兜底
       carouselList.value = pageData?.records || []
       // 更新分页总条数 (如果后端叫 totalRow，请把这里的 total 换成 totalRow)
-      pagination.total = Number(pageData?.total || pageData?.totalRow || 0)
+      pagination.total = Number((pageData as any)?.total || (pageData as any)?.totalRow || 0)
       // 【新增】数据赋值完成后，等待 DOM 渲染完毕，然后初始化拖拽
       nextTick(() => {
         initDragSort()
@@ -286,42 +286,53 @@ const fetchCarouselData = async (selectLocationId: String | number) => {
 }
 // ===========================兼容images文件夹的图片和tmp文件夹的图片===============
 const getUrl = (path: string) => {
-  // 统一后端基地址 (包含 /api)
-  const baseUrl = 'http://localhost:8989/api'
+  // 统一使用我们在宝塔 Nginx 里配置的最高优先级代理前缀
+  const proxyRoot = '/api-proxy'
   if (!path) return ''
 
-  // 1. 如果已经是完整的网络链接，直接用
+  // 1. 如果后端直接返回了带有原本 IP 的完整 HTTP 路径，强行削掉，换成相对代理
+  // 加 (\\/api)? 是为了兼容带 /api 和不带 /api 的各种奇葩情况
+  if (path.includes(':8990')) {
+    return path.replace(/^http:\/\/.*:8990(\/api)?/, proxyRoot)
+  }
   if (path.startsWith('http')) {
     return path
   }
-  // 判断图片前缀
-  if (path.startsWith('/tmp/') || path.startsWith('/images/')) {
-    return `${baseUrl}${path}`
+
+  // 确保路径以 / 开头
+  let p = path.startsWith('/') ? path : '/' + path
+
+  // 判断图片前缀，拼接为 /api-proxy/images/... 格式
+  if (p.startsWith('/tmp/') || p.startsWith('/images/')) {
+    return `${proxyRoot}${p}`
   }
+  return path
 }
 
 // ==========================只兼容转换images文件夹下的路径======================
 const getImageUrl = (path: string) => {
+  const proxyRoot = '/api-proxy'
   if (!path) return ''
 
-  // 1. 如果已经是完整的网络链接，直接用
+  // 同样处理完整的 IP 路径
+  if (path.includes(':8990')) {
+    return path.replace(/^http:\/\/.*:8990(\/api)?/, proxyRoot)
+  }
   if (path.startsWith('http')) {
     return path
   }
 
-  // 统一后端基地址 (包含 /api)
-  const baseUrl = 'http://localhost:8989/api'
+  // 确保路径以 / 开头
+  let p = path.startsWith('/') ? path : '/' + path
 
   // 3. 兼容新数据：如果是后端的相对路径 (比如 /images/xxx.png)
-  if (path.startsWith('/images/')) {
-    return `${baseUrl}${path}`
+  if (p.startsWith('/images/') || p.startsWith('/tmp/')) {
+    return `${proxyRoot}${p}`
   }
 
-  // 兜底返回
-  return `${baseUrl}/images/${path}`
+  // 兜底返回，比如后端只返回了 "xxx.png"，拼成 /api-proxy/images/xxx.png
+  return `${proxyRoot}/images${p}`
 }
-
-// ============================存放从后端获取的位置列表数据=====================
 const locationList = ref<any[]>([])
 // 当前选中的导航栏 key (Ant Design 的 selectedKeys 必须是数组，并且 key 通常建议转成字符串)
 const activeMenuKey = ref<string[]>([])
@@ -339,7 +350,7 @@ const fetchLocations = async () => {
       const firstId = String(locationList.value[0].id)
       activeMenuKey.value = [firstId]
       //在这里加一个为了在第一次点进来还未点击导航栏的时候可以有数据预加载
-      locationTypeForcarouselSaveKey.value = Number([firstId])
+      locationTypeForcarouselSaveKey.value = Number(firstId).toString()
       // 刚进页面不仅要选中第一个导航栏，还要把它的轮播图查出来！
       fetchCarouselData(firstId)
     }
@@ -428,6 +439,14 @@ const showModal = () => {
 const handleUpload = async (options: any) => {
   const { file, onSuccess, onError } = options
 
+  // ========== 新增：大小校验逻辑 ==========
+  const isLt5M = file.size / 1024 / 1024 < 5
+  if (!isLt5M) {
+    message.error('上传图片大小不能超过 5MB！')
+    onError(new Error('文件超过 5MB')) // 让组件显示上传失败的红色状态
+    return // 终止后续操作，不向后端发送请求
+  }
+  // =====================================
   const formData = new FormData()
   formData.append('file', file)
 

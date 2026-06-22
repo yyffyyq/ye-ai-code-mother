@@ -1,7 +1,7 @@
 package com.ye.yeaicodemother.mapper;
 
 import com.mybatisflex.core.BaseMapper;
-import com.ye.yeaicodemother.model.entity.CarouselManager;
+import com.ye.yeaicodemother.model.entity.carousel.CarouselManager;
 
 /**
  *  映射层。

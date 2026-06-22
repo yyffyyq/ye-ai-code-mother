@@ -1,6 +1,5 @@
 package com.ye.yeaicodemother.controller;
 
-import com.fasterxml.jackson.databind.ser.Serializers;
 import com.mybatisflex.core.paginate.Page;
 import com.ye.yeaicodemother.common.BaseResponse;
 import com.ye.yeaicodemother.common.ResultUtils;
@@ -10,21 +9,16 @@ import com.ye.yeaicodemother.exception.ThrowUtils;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselDescriptionDTO;
 import com.ye.yeaicodemother.model.dto.carouselManager.CarouselManagerDto;
 import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionAndImageUrlVO;
-import com.ye.yeaicodemother.model.vo.Carousel.CarouselDescriptionVO;
-import com.ye.yeaicodemother.model.vo.Carousel.CarouselImageUrlVO;
 import com.ye.yeaicodemother.model.vo.CarouselManagerVO;
-import com.ye.yeaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.ye.yeaicodemother.model.entity.CarouselManager;
+import com.ye.yeaicodemother.model.entity.carousel.CarouselManager;
 import com.ye.yeaicodemother.service.CarouselManagerService;
 import org.springframework.web.multipart.MultipartFile;
 
 
-import javax.xml.transform.Result;
-import java.io.File;
 import java.util.List;
 
 /**
@@ -210,9 +204,9 @@ public class CarouselManagerController {
      */
     @GetMapping("/getByIdForDescription/{id}")
     @Operation(summary = "获取图片描述和时间", description = "用于数据回显")
-    public BaseResponse<CarouselDescriptionVO> getByIdForDescription(@PathVariable Long id) {
+    public BaseResponse<CarouselDescriptionAndImageUrlVO> getByIdForDescription(@PathVariable Long id) {
         ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR);
-        CarouselDescriptionVO Result = carouselManagerService.getByIdForDescription(id);
+        CarouselDescriptionAndImageUrlVO Result = carouselManagerService.getByIdForDescription(id);
         return ResultUtils.success(Result);
     }
 }

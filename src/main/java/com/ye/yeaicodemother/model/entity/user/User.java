@@ -1,4 +1,4 @@
-package com.ye.yeaicodemother.model.entity;
+package com.ye.yeaicodemother.model.entity.user;
 
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;

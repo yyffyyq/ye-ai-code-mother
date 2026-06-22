@@ -10,24 +10,19 @@ import com.ye.yeaicodemother.constant.UserConstant;
 import com.ye.yeaicodemother.exception.BusinessException;
 import com.ye.yeaicodemother.exception.ErrorCode;
 import com.ye.yeaicodemother.exception.ThrowUtils;
-import com.ye.yeaicodemother.model.dto.*;
+import com.ye.yeaicodemother.model.dto.userDto.*;
 import com.ye.yeaicodemother.model.vo.LoginUserVO;
 import com.ye.yeaicodemother.model.vo.UserVO;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.ye.yeaicodemother.model.entity.User;
+import com.ye.yeaicodemother.model.entity.user.User;
 import com.ye.yeaicodemother.service.UserService;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.xml.transform.Result;
 import java.util.List;
 
 /**

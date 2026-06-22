@@ -47,7 +47,7 @@
             </a-dropdown>
           </div>
           <div v-else>
-            <a-button type="primary" href="/user/userLogin">登录</a-button>
+            <a-button type="primary" @click="router.push('/user/userLogin')">登录</a-button>
           </div>
         </div>
       </a-col>
